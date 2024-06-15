@@ -1,20 +1,14 @@
 {
 	"manifest_version": 3,
-	"name": "Reddit to GPT",
+	"name": "Reddit Scraper and GPT Agent",
 	"version": "1.0",
-	"description": "Extract Reddit post content and insert it into GPT agent input.",
-	"permissions": [
-	  "activeTab",
-	  "scripting",
-	  "storage",
-	  "tabs"
-	],
+	"permissions": ["activeTab", "storage", "scripting", "tabs"],
 	"host_permissions": [
-		"https://reddit.com/*",
-		"https://chatgpt.com/*"
+	  "https://*.reddit.com/*",
+	  "https://chatgpt.com/*"
 	],
 	"background": {
-		"service_worker": "background.js"
+	  "service_worker": "background.js"
 	},
 	"action": {
 	  "default_popup": "popup.html",
@@ -23,7 +17,12 @@
 		"48": "images/icon48.png",
 		"128": "images/icon128.png"
 	  }
-	}
+	},
+	"content_scripts": [
+	  {
+		"matches": ["*://*.reddit.com/*"],
+		"js": ["content.js"]
+	  }
+	]
   }
-  
   
