@@ -8,7 +8,7 @@ function logToBackground(message) {
 	    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
 		  chrome.scripting.executeScript({
 		    target: { tabId: tabs[0].id },
-		    files: ['content.js']
+		    files: ['reddit-content.js']
 		  }, () => {
 		    chrome.tabs.create({ url: 'https://chatgpt.com/g/g-VXDFLZI2H-synthese-de-post', active: false }, (newTab) => {
 			  chrome.storage.local.set({ gptTabId: newTab.id, scriptInjected: false }, () => {
