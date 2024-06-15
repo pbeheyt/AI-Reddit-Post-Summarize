@@ -7,8 +7,7 @@ function logToBackground(message) {
 	  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
 		const currentTabUrl = tabs[0].url;
   
-		// Check if the current tab URL contains "/comments/"
-		if (currentTabUrl.includes('/comments/')) {
+		if (currentTabUrl.includes('reddit.com') && currentTabUrl.includes('/comments/')) {
 		  chrome.storage.local.clear(() => {
 			chrome.scripting.executeScript({
 			  target: { tabId: tabs[0].id },
@@ -22,7 +21,6 @@ function logToBackground(message) {
 			});
 		  });
 		} else {
-		  // Display an error message to the user
 		  alert('You are not on a Reddit post content page.');
 		}
 	  });
