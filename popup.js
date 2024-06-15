@@ -13,11 +13,15 @@ function logToBackground(message) {
 			  target: { tabId: tabs[0].id },
 			  files: ['reddit-content.js']
 			}, () => {
-			  chrome.tabs.create({ url: 'https://chatgpt.com/g/g-VXDFLZI2H-synthese-de-post', active: false }, (newTab) => {
-				chrome.storage.local.set({ gptTabId: newTab.id, scriptInjected: false }, () => {
-				  chrome.tabs.update(newTab.id, { active: true });
+			  fetch(chrome.runtime.getURL('config.json'))
+				.then(response => response.json())
+				.then(config => {
+				  chrome.tabs.create({ url: config.chatgptUrl, active: false }, (newTab) => {
+					chrome.storage.local.set({ gptTabId: newTab.id, scriptInjected: false }, () => {
+					  chrome.tabs.update(newTab.id, { active: true });
+					});
+				  });
 				});
-			  });
 			});
 		  });
 		} else {

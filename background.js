@@ -3,17 +3,23 @@ chrome.runtime.onInstalled.addListener(() => {
   });
   
   chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-	if (changeInfo.status === 'complete' && tab.url && tab.url.includes('g/g-VXDFLZI2H-synthese-de-post')) {
-	  chrome.storage.local.get(['gptTabId', 'scriptInjected'], (result) => {
-		if (tabId === result.gptTabId && !result.scriptInjected) {
-		  chrome.scripting.executeScript({
-			target: { tabId: tabId },
-			files: ['gpt-content.js']
-		  }, () => {
-			chrome.storage.local.set({ scriptInjected: true });
-		  });
-		}
-	  });
+	if (changeInfo.status === 'complete' && tab.url) {
+	  fetch(chrome.runtime.getURL('config.json'))
+		.then(response => response.json())
+		.then(config => {
+		  if (tab.url.includes(config.chatgptUrl)) {
+			chrome.storage.local.get(['gptTabId', 'scriptInjected'], (result) => {
+			  if (tabId === result.gptTabId && !result.scriptInjected) {
+				chrome.scripting.executeScript({
+				  target: { tabId: tabId },
+				  files: ['gpt-content.js']
+				}, () => {
+				  chrome.storage.local.set({ scriptInjected: true });
+				});
+			  }
+			});
+		  }
+		});
 	}
   });
   
