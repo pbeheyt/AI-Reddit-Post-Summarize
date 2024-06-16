@@ -1,4 +1,3 @@
-// Function to insert data into the textarea
 const insertData = (data) => {
 	const promptField = document.querySelector('#prompt-textarea');
 	if (promptField) {
@@ -17,7 +16,6 @@ const insertData = (data) => {
 	}
   };
   
-  // Function to send the prompt
   const sendPrompt = () => {
 	const sendButton = document.querySelector('[data-testid="fruitjuice-send-button"]');
 	if (sendButton) {
@@ -42,14 +40,26 @@ const insertData = (data) => {
 	}
   };
   
-  // Main function to handle the process
   const handleProcess = () => {
 	chrome.storage.local.get(['postTitle', 'postContent', 'comments'], (result) => {
 	  insertData(result);
 	  sendPrompt();
   
-	  // Delay the scrolling to allow the page to update
-	  setTimeout(scrollToTopOfLastElement, 5000);
+	  // Use MutationObserver to detect new elements added by ChatGPT
+	  const observer = new MutationObserver((mutations) => {
+		mutations.forEach((mutation) => {
+		  if (mutation.addedNodes.length) {
+			scrollToTopOfLastElement();
+		  }
+		});
+	  });
+  
+	  observer.observe(document.body, { childList: true, subtree: true });
+  
+	  // Disconnect the observer after some time to prevent performance issues
+	  setTimeout(() => {
+		observer.disconnect();
+	  }, 5000);
 	});
   };
   
