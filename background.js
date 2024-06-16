@@ -1,5 +1,71 @@
 chrome.runtime.onInstalled.addListener(() => {
-	console.log("Extension installed.");
+    console.log("Extension installed.");
+	chrome.contextMenus.create({
+	  id: "openLinkAndPerformScript",
+	  title: "Open Link and Perform Script",
+	  contexts: ["link"]
+	});
+  });
+  
+  chrome.runtime.onInstalled.addListener(() => {
+	chrome.contextMenus.create({
+	  id: "openLinkAndPerformScript",
+	  title: "Open Link and Perform Script",
+	  contexts: ["link"]
+	});
+  });
+  
+  chrome.runtime.onInstalled.addListener(() => {
+	chrome.contextMenus.create({
+	  id: "openLinkAndPerformScript",
+	  title: "Open Link and Perform Script",
+	  contexts: ["link"]
+	});
+  });
+  
+  chrome.contextMenus.onClicked.addListener((info, tab) => {
+	if (info.menuItemId === "openLinkAndPerformScript") {
+	  const url = info.linkUrl;
+  
+	  fetch(chrome.runtime.getURL('config.json'))
+		.then(response => response.json())
+		.then(config => {
+		  const chatgptUrl = config.chatgptUrl;
+  
+		  chrome.tabs.create({ url, active: false }, (newTab) => {
+			chrome.scripting.executeScript({
+			  target: { tabId: newTab.id },
+			  files: ['reddit-content.js']
+			}, () => {
+			  chrome.tabs.onUpdated.addListener(function redditTabListener(tabId, changeInfo, tab) {
+				if (tabId === newTab.id && changeInfo.status === 'complete') {
+				  chrome.tabs.onUpdated.removeListener(redditTabListener);
+				  chrome.tabs.remove(newTab.id);
+				  chrome.tabs.create({ url: chatgptUrl, active: false }, (gptTab) => {
+					chrome.storage.local.set({ gptTabId: gptTab.id, scriptInjected: false }, () => {
+					  chrome.tabs.onUpdated.addListener(function gptTabListener(tabId, changeInfo, tab) {
+						if (tabId === gptTab.id && changeInfo.status === 'complete' && tab.url.includes(chatgptUrl)) {
+						  chrome.tabs.onUpdated.removeListener(gptTabListener);
+  
+						  chrome.scripting.executeScript({
+							target: { tabId: gptTab.id },
+							files: ['gpt-content.js']
+						  }, () => {
+							chrome.storage.local.set({ scriptInjected: true }, () => {
+							  chrome.tabs.update(gptTab.id, { active: true });
+							});
+						  });
+						}
+					  });
+					});
+				  });
+				}
+			  });
+			});
+		  });
+		})
+		.catch(error => console.error('Error fetching config:', error));
+	}
   });
   
   chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {

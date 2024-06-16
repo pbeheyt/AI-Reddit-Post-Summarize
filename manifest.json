@@ -2,7 +2,12 @@
 	"manifest_version": 3,
 	"name": "Reddit Scraper and GPT Agent",
 	"version": "1.0",
-	"permissions": ["activeTab", "storage", "scripting", "tabs"],
+	"permissions": [
+		"contextMenus",
+		"activeTab",
+		"scripting",
+		"storage"
+	],
 	"host_permissions": [
 	  "https://*.reddit.com/*",
 	  "https://chatgpt.com/*"
