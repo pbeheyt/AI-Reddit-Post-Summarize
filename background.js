@@ -102,8 +102,6 @@ async function performScript(url) {
         } catch (error) {
             console.error('Error fetching config:', error);
         }
-    } else {
-        alert('The link is not a valid Reddit post.');
     }
 }
 
