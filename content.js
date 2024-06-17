@@ -1,10 +1,8 @@
-// Function to extract the title
 function extractTitle() {
 	const titleElement = document.querySelector('h1');
 	return titleElement ? titleElement.innerText : 'Title not found';
   }
   
-  // Function to extract the post content
   function extractPostContent() {
 	const contentElement = document.querySelector('.text-neutral-content[slot="text-body"] .mb-sm .md.text-14');
 	if (!contentElement) return 'Post content not found';
@@ -16,7 +14,6 @@ function extractTitle() {
 	return postContent;
   }
   
-  // Function to extract comments
   function extractComments() {
 	const comments = [];
 	document.querySelectorAll('shreddit-comment').forEach(comment => {
@@ -38,12 +35,10 @@ function extractTitle() {
 	return comments;
   }
   
-  // Extracting all content
   const postTitle = extractTitle();
   const postContent = extractPostContent();
   const comments = extractComments();
   
-  // Store the extracted data in Chrome storage
   chrome.storage.local.set({ postTitle, postContent, comments }, () => {
 	console.log('Content saved:', { postTitle, postContent, comments });
   });

@@ -1,33 +1,27 @@
-function logToBackground(message) {
-	chrome.runtime.sendMessage({ action: 'log', message: message });
-  }
-  
-  document.addEventListener('DOMContentLoaded', () => {
-	document.getElementById('extractBtn').addEventListener('click', () => {
-	  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-		const currentTabUrl = tabs[0].url;
-  
-		if (currentTabUrl.includes('reddit.com') && currentTabUrl.includes('/comments/')) {
-		  chrome.storage.local.clear(() => {
-			chrome.scripting.executeScript({
-			  target: { tabId: tabs[0].id },
-			  files: ['reddit-content.js']
-			}, () => {
-			  fetch(chrome.runtime.getURL('config.json'))
-				.then(response => response.json())
-				.then(config => {
-				  chrome.tabs.create({ url: config.chatgptUrl, active: false }, (newTab) => {
-					chrome.storage.local.set({ gptTabId: newTab.id, scriptInjected: false }, () => {
-					  chrome.tabs.update(newTab.id, { active: true });
-					});
-				  });
-				});
-			});
-		  });
-		} else {
-		  alert('You are not on a Reddit post content page.');
-		}
-	  });
-	});
-  });
-  
+document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('summarizeBtn').addEventListener('click', async () => {
+        try {
+            const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+            const currentTabUrl = tabs[0].url;
+
+            if (currentTabUrl.includes('reddit.com') && currentTabUrl.includes('/comments/')) {
+                await chrome.storage.local.clear();
+                await chrome.scripting.executeScript({
+                    target: { tabId: tabs[0].id },
+                    files: ['reddit-content.js']
+                });
+
+                const response = await fetch(chrome.runtime.getURL('config.json'));
+                const config = await response.json();
+
+                const newTab = await chrome.tabs.create({ url: config.chatgptUrl, active: false });
+                await chrome.storage.local.set({ gptTabId: newTab.id, scriptInjected: false });
+                await chrome.tabs.update(newTab.id, { active: true });
+            } else {
+                alert('You are not on a Reddit post content page.');
+            }
+        } catch (error) {
+            console.error('Error during execution:', error);
+        }
+    });
+});
