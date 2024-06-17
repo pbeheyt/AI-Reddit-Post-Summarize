@@ -1,6 +1,6 @@
 {
 	"manifest_version": 3,
-	"name": "Reddit Scraper and GPT Agent",
+	"name": "GPT Reddit Post Summarize",
 	"version": "1.0",
 	"permissions": [
 		"contextMenus",
