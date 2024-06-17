@@ -68,32 +68,37 @@ async function performScript(url) {
             const chatgptUrl = config.chatgptUrl;
 
             const newTab = await chrome.tabs.create({ url, active: false });
+
+			chrome.tabs.onUpdated.addListener(function redditTabListener(tabId, changeInfo, tab) {
+				if (tabId === newTab.id && changeInfo.status === 'complete') {
+					chrome.tabs.onUpdated.removeListener(redditTabListener);
+				}
+            });
+
+            await waitForCommentsToLoad(newTab.id);
+
             await chrome.scripting.executeScript({
                 target: { tabId: newTab.id },
                 files: ['reddit-content.js']
             });
 
-            chrome.tabs.onUpdated.addListener(function redditTabListener(tabId, changeInfo, tab) {
-                if (tabId === newTab.id && changeInfo.status === 'complete') {
-                    chrome.tabs.onUpdated.removeListener(redditTabListener);
-                    chrome.tabs.remove(newTab.id);
+            chrome.tabs.remove(newTab.id);
 
-                    chrome.tabs.create({ url: chatgptUrl, active: false }, async (gptTab) => {
-                        await chrome.storage.local.set({ gptTabId: gptTab.id, scriptInjected: false });
-                        chrome.tabs.onUpdated.addListener(async function gptTabListener(tabId, changeInfo, tab) {
-                            if (tabId === gptTab.id && changeInfo.status === 'complete' && tab.url.includes(chatgptUrl)) {
-                                chrome.tabs.onUpdated.removeListener(gptTabListener);
-                                await chrome.scripting.executeScript({
-                                    target: { tabId: gptTab.id },
-                                    files: ['gpt-content.js']
-                                });
-                                await chrome.storage.local.set({ scriptInjected: true });
-                                await chrome.tabs.update(gptTab.id, { active: true });
-                            }
+            chrome.tabs.create({ url: chatgptUrl, active: false }, async (gptTab) => {
+                await chrome.storage.local.set({ gptTabId: gptTab.id, scriptInjected: false });
+                chrome.tabs.onUpdated.addListener(async function gptTabListener(tabId, changeInfo, tab) {
+                    if (tabId === gptTab.id && changeInfo.status === 'complete' && tab.url.includes(chatgptUrl)) {
+                        chrome.tabs.onUpdated.removeListener(gptTabListener);
+                        await chrome.scripting.executeScript({
+                            target: { tabId: gptTab.id },
+                            files: ['gpt-content.js']
                         });
-                    });
-                }
+                        await chrome.storage.local.set({ scriptInjected: true });
+                        await chrome.tabs.update(gptTab.id, { active: true });
+                    }
+                });
             });
+
         } catch (error) {
             console.error('Error fetching config:', error);
         }
@@ -101,3 +106,21 @@ async function performScript(url) {
         alert('The link is not a valid Reddit post.');
     }
 }
+
+async function waitForCommentsToLoad(tabId) {
+    await new Promise((resolve) => {
+        const interval = setInterval(async () => {
+            const [result] = await chrome.scripting.executeScript({
+                target: { tabId: tabId },
+                func: () => {
+                    return document.querySelectorAll('shreddit-comment').length > 0;
+                }
+            });
+            if (result.result) {
+                clearInterval(interval);
+                resolve();
+            }
+        }, 200);
+    });
+}
+
