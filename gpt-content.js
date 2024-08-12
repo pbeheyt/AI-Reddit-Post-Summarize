@@ -18,7 +18,7 @@
     };
 
     const sendPrompt = () => {
-        const sendButton = document.querySelector('[data-testid="fruitjuice-send-button"]');
+        const sendButton = document.querySelector('[data-testid="send-button"]');
         if (sendButton) {
             sendButton.click();
         } else {
