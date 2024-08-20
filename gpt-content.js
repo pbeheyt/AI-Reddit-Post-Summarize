@@ -26,43 +26,13 @@
         }
     };
 
-    const waitForTopElementAndScroll = async () => {
-        try {
-            while (true) {
-                let elements = document.querySelectorAll('[data-testid^="conversation-turn"]');
-                if (elements.length > 0) {
-                    let lastElement = elements[elements.length - 1];
-                    lastElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                    break; 
-                }
-                await new Promise(resolve => setTimeout(resolve, 200));
-            }
-        } catch (error) {
-            console.error("Error scrolling to top of last element:", error);
-        }
-    };
-
     const handleProcess = async () => {
         try {
             const result = await chrome.storage.local.get(['postTitle', 'postContent', 'comments']);
             insertData(result);
             sendPrompt();
 
-            // Use MutationObserver to detect new elements added by ChatGPT
-            const observer = new MutationObserver((mutations) => {
-                mutations.forEach((mutation) => {
-                    if (mutation.addedNodes.length) {
-                        waitForTopElementAndScroll();
-                    }
-                });
-            });
-
-            observer.observe(document.body, { childList: true, subtree: true });
-
-            // Disconnect the observer after some time to prevent performance issues
-            setTimeout(() => {
-                observer.disconnect();
-            }, 5000);
+            // The MutationObserver is removed, so there's no automatic scrolling
         } catch (error) {
             console.error("Error handling process:", error);
         }
