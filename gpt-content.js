@@ -20,7 +20,10 @@
     const sendPrompt = () => {
         const sendButton = document.querySelector('[data-testid="send-button"]');
         if (sendButton) {
-            sendButton.click();
+            // Slight delay to ensure the input has been fully processed
+            setTimeout(() => {
+                sendButton.click();
+            }, 100);
         } else {
             console.error('Send button not found');
         }
@@ -30,9 +33,11 @@
         try {
             const result = await chrome.storage.local.get(['postTitle', 'postContent', 'comments']);
             insertData(result);
-            sendPrompt();
 
-            // The MutationObserver is removed, so there's no automatic scrolling
+            // Prevent potential scroll-triggered issues
+            document.body.style.overflow = 'hidden';
+            sendPrompt();
+            document.body.style.overflow = ''; // Re-enable scrolling after sending prompt
         } catch (error) {
             console.error("Error handling process:", error);
         }
