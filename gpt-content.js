@@ -23,7 +23,7 @@
             // Slight delay to ensure the input has been fully processed
             setTimeout(() => {
                 sendButton.click();
-            }, 100);
+            }, 500);
         } else {
             console.error('Send button not found');
         }
