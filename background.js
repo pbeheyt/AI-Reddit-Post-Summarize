@@ -69,36 +69,44 @@ async function performScript(url) {
 
             const newTab = await chrome.tabs.create({ url, active: false });
 
-			chrome.tabs.onUpdated.addListener(function redditTabListener(tabId, changeInfo, tab) {
-				if (tabId === newTab.id && changeInfo.status === 'complete') {
-					chrome.tabs.onUpdated.removeListener(redditTabListener);
-				}
-            });
-
-            await waitForCommentsToLoad(newTab.id);
-
-            await chrome.scripting.executeScript({
-                target: { tabId: newTab.id },
-                files: ['reddit-content.js']
-            });
-
-            chrome.tabs.remove(newTab.id);
-
-            chrome.tabs.create({ url: chatgptUrl, active: false }, async (gptTab) => {
-                await chrome.storage.local.set({ gptTabId: gptTab.id, scriptInjected: false });
-                chrome.tabs.onUpdated.addListener(async function gptTabListener(tabId, changeInfo, tab) {
-                    if (tabId === gptTab.id && changeInfo.status === 'complete' && tab.url.includes(chatgptUrl)) {
-                        chrome.tabs.onUpdated.removeListener(gptTabListener);
+            chrome.tabs.onUpdated.addListener(async function redditTabListener(tabId, changeInfo, tab) {
+                if (tabId === newTab.id && changeInfo.status === 'complete') {
+                    // Wait for comments to load before proceeding
+                    try {
+                        // await sleep(3); // Ensuring comments are loaded
+                        await waitForCommentsToLoad(newTab.id); // Ensuring comments are loaded
+                        console.log('Comments loaded, now executing the script...');
+                        
                         await chrome.scripting.executeScript({
-                            target: { tabId: gptTab.id },
-                            files: ['gpt-content.js']
+                            target: { tabId: newTab.id },
+                            files: ['reddit-content.js']
                         });
-                        await chrome.storage.local.set({ scriptInjected: true });
-                        await chrome.tabs.update(gptTab.id, { active: true });
-                    }
-                });
-            });
+                        
+                        // Close the Reddit tab after the script is executed
+                        chrome.tabs.remove(newTab.id);
 
+                        // Open ChatGPT tab
+                        chrome.tabs.create({ url: chatgptUrl, active: false }, async (gptTab) => {
+                            await chrome.storage.local.set({ gptTabId: gptTab.id, scriptInjected: false });
+                            chrome.tabs.onUpdated.addListener(async function gptTabListener(tabId, changeInfo, tab) {
+                                if (tabId === gptTab.id && changeInfo.status === 'complete' && tab.url.includes(chatgptUrl)) {
+                                    chrome.tabs.onUpdated.removeListener(gptTabListener);
+                                    await chrome.scripting.executeScript({
+                                        target: { tabId: gptTab.id },
+                                        files: ['gpt-content.js']
+                                    });
+                                    await chrome.storage.local.set({ scriptInjected: true });
+                                    await chrome.tabs.update(gptTab.id, { active: true });
+                                }
+                            });
+                        });
+                    } catch (error) {
+                        console.error('Error loading comments or executing script:', error);
+                    }
+                    
+                    chrome.tabs.onUpdated.removeListener(redditTabListener); // Remove listener only after everything is done
+                }
+            });
         } catch (error) {
             console.error('Error fetching config:', error);
         }
@@ -106,19 +114,26 @@ async function performScript(url) {
 }
 
 async function waitForCommentsToLoad(tabId) {
-    await new Promise((resolve) => {
+    let attempts = 0;
+    const maxAttempts = 15; // Max 15 attempts = 3 seconds (15 * 200ms)
+    
+    return new Promise((resolve, reject) => {
         const interval = setInterval(async () => {
             const [result] = await chrome.scripting.executeScript({
                 target: { tabId: tabId },
-                func: () => {
-                    return document.querySelectorAll('shreddit-comment').length > 0;
-                }
+                func: () => document.querySelectorAll('shreddit-comment').length > 0
             });
+            
+            attempts++;
             if (result.result) {
                 clearInterval(interval);
                 resolve();
+            } else if (attempts >= maxAttempts) {
+                clearInterval(interval);
+                reject(new Error("Comments failed to load within the time limit."));
             }
         }, 200);
     });
 }
+
 
