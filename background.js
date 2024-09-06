@@ -115,7 +115,7 @@ async function performScript(url) {
 
 async function waitForCommentsToLoad(tabId) {
     let attempts = 0;
-    const maxAttempts = 15; // Max 15 attempts = 3 seconds (15 * 200ms)
+    const maxAttempts = 25; // Max 25 attempts = 5 seconds (25 * 200ms)
     
     return new Promise((resolve, reject) => {
         const interval = setInterval(async () => {
