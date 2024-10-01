@@ -7,49 +7,62 @@
             ).join('\n\n');
             const textToInsert = `Title: ${data.postTitle}\n\nContent: ${data.postContent}\n\nComments:\n${commentsText}`;
             
-            promptField.value = textToInsert;
+            promptField.focus();  // Ensure focus on the field
+            
+            // Use execCommand to simulate user input
+            document.execCommand('insertText', false, textToInsert);
 
-            // Trigger input event to ensure the change is registered
-            const inputEvent = new Event('input', { bubbles: true });
+            // Trigger input and change events to ensure the change is registered
+            const inputEvent = new InputEvent('input', { bubbles: true });
             promptField.dispatchEvent(inputEvent);
+
+            const changeEvent = new Event('change', { bubbles: true });
+            promptField.dispatchEvent(changeEvent);
         } else {
             console.error('Prompt textarea not found');
         }
     };
 
+    // Define the sendPrompt function
     const sendPrompt = () => {
-        const sendButton = document.querySelector('[data-testid="send-button"]');
-        if (sendButton) {
-            // Slight delay to ensure the input has been fully processed
-            setTimeout(() => {
-                sendButton.click();
-            }, 500);
-        } else {
-            console.error('Send button not found');
-        }
+        setTimeout(() => {
+            const sendButton = document.querySelector('[data-testid="send-button"]');
+            if (sendButton) {
+                console.log('Send button found, dispatching a simulated click event...');
+                
+                // Simulate a mouse click event
+                const event = new MouseEvent('click', {
+                    view: window,
+                    bubbles: true,
+                    cancelable: true
+                });
+                sendButton.dispatchEvent(event);
+            } else {
+                console.error('Send button not found');
+            }
+        }, 1000);  // 1 second delay
     };
 
     const handleProcess = async () => {
         try {
             const result = await chrome.storage.local.get(['postTitle', 'postContent', 'comments']);
+            console.log(result);  // Debugging: Check if the data is correct
             insertData(result);
-
-            // Prevent potential scroll-triggered issues
-            document.body.style.overflow = 'hidden';
-            sendPrompt();
-            document.body.style.overflow = ''; // Re-enable scrolling after sending prompt
+            sendPrompt();  // Call the sendPrompt function here
         } catch (error) {
             console.error("Error handling process:", error);
         }
     };
 
-    // Use MutationObserver to wait for the element to be added to the DOM
-    const observer = new MutationObserver((mutations, observer) => {
-        if (document.querySelector('#prompt-textarea')) {
-            handleProcess();
-            observer.disconnect();
+    const observer = new MutationObserver(() => {
+        const promptField = document.querySelector('#prompt-textarea');
+        if (promptField) {
+            console.log('Textarea found');
+            observer.disconnect();  // Disconnect observer after finding the textarea
+            handleProcess();  // Execute the main process
         }
     });
 
+    // Start observing the document for changes
     observer.observe(document.body, { childList: true, subtree: true });
 })();
